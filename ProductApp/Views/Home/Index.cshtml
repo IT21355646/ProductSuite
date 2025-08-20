@@ -1,8 +1,30 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container my-5 text-center">
+    <h1 class="mb-3">Welcome to Our Product Store</h1>
+    <p class="lead mb-4">Browse our products, add them to your cart, and enjoy a seamless shopping experience.</p>
+    <a href="/Products" class="btn btn-primary btn-lg">Shop Now</a>
+</div>
+
+<div class="container my-5">
+    <h2 class="text-center mb-4">Our Features</h2>
+    <div class="row text-center">
+        <div class="col-md-4 mb-3">
+            <i class="bi bi-bag-fill fs-1 text-primary"></i>
+            <h5 class="mt-2">Wide Selection</h5>
+            <p>Explore a variety of products across multiple categories.</p>
+        </div>
+        <div class="col-md-4 mb-3">
+            <i class="bi bi-truck fs-1 text-primary"></i>
+            <h5 class="mt-2">Fast Delivery</h5>
+            <p>Get your orders delivered quickly and reliably.</p>
+        </div>
+        <div class="col-md-4 mb-3">
+            <i class="bi bi-shield-check fs-1 text-primary"></i>
+            <h5 class="mt-2">Secure Payments</h5>
+            <p>Safe and secure checkout for all your transactions.</p>
+        </div>
+    </div>
 </div>

@@ -44,17 +44,46 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light text-center py-4 mt-5" id="contact">
+    <footer class="bg-dark text-light mt-5 p-4">
         <div class="container">
-            <p class="mb-1">© 2025 ProductApp. All rights reserved.</p>
-            <p class="mb-1">Contact us: info@productapp.com</p>
-            <div>
-                <a href="#" class="text-light me-3">Facebook</a>
-                <a href="#" class="text-light me-3">Twitter</a>
-                <a href="#" class="text-light">LinkedIn</a>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h5>Company</h5>
+                    <p>123 Product Street<br />City, Country</p>
+                    <p>Email: info@productstore.com</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Follow Us</h5>
+                    <a href="#" class="text-light me-2"><i class="bi bi-facebook fs-4"></i></a>
+                    <a href="#" class="text-light me-2"><i class="bi bi-twitter fs-4"></i></a>
+                    <a href="#" class="text-light"><i class="bi bi-instagram fs-4"></i></a>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h5>Contact Us</h5>
+                    <form id="footerContactForm">
+                        <input type="text" class="form-control mb-2" placeholder="Name" required>
+                        <input type="email" class="form-control mb-2" placeholder="Email" required>
+                        <textarea class="form-control mb-2" rows="2" placeholder="Message" required></textarea>
+                        <button type="submit" class="btn btn-primary w-100">Send</button>
+                    </form>
+                </div>
             </div>
+            <hr class="bg-light">
+            <p class="text-center mb-0">&copy; 2025 Product Store. All rights reserved.</p>
         </div>
     </footer>
+
+    @section Scripts {
+    <script>
+    $(document).ready(function(){
+        $("#footerContactForm").on("submit", function(e){
+            e.preventDefault();
+            alert("Thank you! Your message has been sent.");
+            $(this)[0].reset();
+        });
+    });
+    </script>
+    }
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
