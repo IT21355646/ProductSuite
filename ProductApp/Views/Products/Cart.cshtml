@@ -41,7 +41,7 @@
                 <span>Total:</span>
                 <strong id="cartTotal">$0.00</strong>
             </p>
-            <button class="btn btn-success w-100 mt-3">Proceed to Checkout</button>
+            <button id="proceedCheckoutBtn" class="btn btn-success w-100 mt-3">Proceed to Checkout</button>
         </div>
     </div>
 </div>
@@ -109,6 +109,13 @@
             localStorage.setItem("cart", JSON.stringify(cart));
             loadCart();
         });
+
+        // Proceed to Checkout button
+        $(document).on("click", ".btn-success", function() {
+            // Redirect to Checkout page
+            window.location.href = "/Products/Checkout";
+        });
+
 
         // Initial Load
         $(document).ready(function () {

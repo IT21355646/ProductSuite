@@ -1,0 +1,92 @@
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<div class="container my-5">
+    <h2 class="mb-4 text-center">Checkout</h2>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <h5>Shipping Details</h5>
+            <form id="checkoutForm">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea class="form-control" id="address" rows="3" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="city" class="form-label">City</label>
+                    <input type="text" class="form-control" id="city" required>
+                </div>
+                <div class="mb-3">
+                    <label for="zip" class="form-label">ZIP / Postal Code</label>
+                    <input type="text" class="form-control" id="zip" required>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <h5>Order Summary</h5>
+            <div class="card shadow p-3">
+                <ul class="list-group mb-3" id="checkoutCartList">
+                    <!-- Items dynamically loaded -->
+                </ul>
+                <p class="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <strong id="checkoutSubtotal">$0.00</strong>
+                </p>
+                <p class="d-flex justify-content-between">
+                    <span>Shipping:</span>
+                    <strong>Free</strong>
+                </p>
+                <hr>
+                <p class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Total:</span>
+                    <strong id="checkoutTotal">$0.00</strong>
+                </p>
+                <button type="button" id="placeOrderBtn" class="btn btn-success w-100 mt-3">Place Order</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(document).ready(function() {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    function renderCheckoutCart() {
+        let subtotal = 0;
+        $("#checkoutCartList").empty();
+        cart.forEach(item => {
+            let total = item.price * item.quantity;
+            subtotal += total;
+            $("#checkoutCartList").append(`<li class="list-group-item d-flex justify-content-between align-items-center">
+                ${item.title} (x${item.quantity}) <span>$${total.toFixed(2)}</span>
+            </li>`);
+        });
+        $("#checkoutSubtotal").text(`$${subtotal.toFixed(2)}`);
+        $("#checkoutTotal").text(`$${subtotal.toFixed(2)}`);
+    }
+
+    renderCheckoutCart();
+
+    $("#placeOrderBtn").on("click", function() {
+        if($("#checkoutForm")[0].checkValidity()) {
+            alert("Order placed successfully! Thank you.");
+            localStorage.removeItem("cart");
+            window.location.href = "/Products";
+        } else {
+            $("#checkoutForm")[0].reportValidity();
+        }
+    });
+});
+</script>
+}

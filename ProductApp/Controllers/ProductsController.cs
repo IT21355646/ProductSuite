@@ -23,5 +23,11 @@ namespace ProductApp.Controllers
         {
             return View();
         }
+
+        // GET: /Products/Checkout
+        public IActionResult Checkout()
+        {
+            return View();
+        }
     }
 }
