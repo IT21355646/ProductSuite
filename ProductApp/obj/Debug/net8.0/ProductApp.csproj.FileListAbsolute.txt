@@ -28,3 +28,4 @@ D:\Career\Waterlily\ProductSuite\ProductApp\obj\Debug\net8.0\refint\ProductApp.d
 D:\Career\Waterlily\ProductSuite\ProductApp\obj\Debug\net8.0\ProductApp.pdb
 D:\Career\Waterlily\ProductSuite\ProductApp\obj\Debug\net8.0\ProductApp.genruntimeconfig.cache
 D:\Career\Waterlily\ProductSuite\ProductApp\obj\Debug\net8.0\ref\ProductApp.dll
+D:\Career\Waterlily\ProductSuite\ProductApp\obj\Debug\net8.0\ProductApp.sourcelink.json

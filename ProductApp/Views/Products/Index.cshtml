@@ -1,0 +1,123 @@
+@{
+    ViewData["Title"] = "Products";
+}
+
+<div class="container my-5">
+    <h2 class="mb-4">Products</h2>
+
+    <!-- Search -->
+    <div class="mb-3">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search products by title...">
+    </div>
+
+    <!-- Filter by category -->
+    <div class="mb-3">
+        <select id="categoryFilter" class="form-select">
+            <option value="">All Categories</option>
+        </select>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="row" id="productGrid">
+        <!-- Products will be loaded here dynamically -->
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+    </nav>
+</div>
+
+@section Scripts {
+<script>
+$(document).ready(function() {
+    const apiURL = "https://dummyjson.com/products";
+    let allProducts = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    // Fetch products
+    $.getJSON(apiURL, function(data) {
+        allProducts = data.products;
+        populateCategories();
+        renderProducts();
+        setupPagination();
+    });
+
+    function populateCategories() {
+        let categories = [...new Set(allProducts.map(p => p.category))];
+        categories.forEach(cat => {
+            $('#categoryFilter').append(`<option value="${cat}">${cat}</option>`);
+        });
+    }
+
+    function renderProducts() {
+        let filteredProducts = filterAndSearchProducts();
+        let paginatedProducts = paginate(filteredProducts, currentPage, itemsPerPage);
+
+        $('#productGrid').empty();
+        paginatedProducts.forEach(p => {
+            $('#productGrid').append(`
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="${p.thumbnail}" class="card-img-top" alt="${p.title}">
+                        <div class="card-body">
+                            <h5 class="card-title">${p.title}</h5>
+                            <p class="card-text">$${p.price}</p>
+                            <p class="card-text"><small class="text-muted">${p.category}</small></p>
+                            <button class="btn btn-primary btn-sm view-details" data-id="${p.id}">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            `);
+        });
+    }
+
+    function filterAndSearchProducts() {
+        const search = $('#searchInput').val().toLowerCase();
+        const category = $('#categoryFilter').val();
+        return allProducts.filter(p => {
+            return (!category || p.category === category) &&
+                   (!search || p.title.toLowerCase().includes(search));
+        });
+    }
+
+    function paginate(items, page, perPage) {
+        const start = (page - 1) * perPage;
+        return items.slice(start, start + perPage);
+    }
+
+    function setupPagination() {
+        let totalPages = Math.ceil(filterAndSearchProducts().length / itemsPerPage);
+        $('#pagination').empty();
+        for(let i=1; i<=totalPages; i++){
+            $('#pagination').append(`
+                <li class="page-item ${i===currentPage?'active':''}">
+                    <a class="page-link" href="#">${i}</a>
+                </li>
+            `);
+        }
+    }
+
+    // Event handlers
+    $('#searchInput').on('input', function() {
+        currentPage = 1;
+        renderProducts();
+        setupPagination();
+    });
+
+    $('#categoryFilter').on('change', function() {
+        currentPage = 1;
+        renderProducts();
+        setupPagination();
+    });
+
+    $('#pagination').on('click', '.page-link', function(e) {
+        e.preventDefault();
+        currentPage = parseInt($(this).text());
+        renderProducts();
+        setupPagination();
+    });
+});
+</script>
+}
