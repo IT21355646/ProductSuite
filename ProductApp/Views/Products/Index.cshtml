@@ -28,96 +28,167 @@
     </nav>
 </div>
 
+<!-- Product Details Modal -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productModalLabel">Product Title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <img id="modalProductImage" src="" class="img-fluid" alt="Product Image" />
+          </div>
+          <div class="col-md-6">
+            <p id="modalProductDescription"></p>
+            <p>Category: <span id="modalProductCategory"></span></p>
+            <p>Price: $<span id="modalProductPrice"></span></p>
+            <p>Rating: <span id="modalProductRating"></span></p>
+            <button id="addToCartBtn" class="btn btn-success">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 @section Scripts {
 <script>
-$(document).ready(function() {
-    const apiURL = "https://dummyjson.com/products";
-    let allProducts = [];
-    let currentPage = 1;
-    const itemsPerPage = 10;
+    $(document).ready(function() {
+        const apiURL = "https://dummyjson.com/products";
+        let allProducts = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
 
-    // Fetch products
-    $.getJSON(apiURL, function(data) {
-        allProducts = data.products;
-        populateCategories();
-        renderProducts();
-        setupPagination();
-    });
+        // Cart object
+        let cart = [];
 
-    function populateCategories() {
-        let categories = [...new Set(allProducts.map(p => p.category))];
-        categories.forEach(cat => {
-            $('#categoryFilter').append(`<option value="${cat}">${cat}</option>`);
+        // Fetch products
+        $.getJSON(apiURL, function(data) {
+            allProducts = data.products;
+            populateCategories();
+            renderProducts();
+            setupPagination();
         });
-    }
 
-    function renderProducts() {
-        let filteredProducts = filterAndSearchProducts();
-        let paginatedProducts = paginate(filteredProducts, currentPage, itemsPerPage);
+        function populateCategories() {
+            let categories = [...new Set(allProducts.map(p => p.category))];
+            categories.forEach(cat => {
+                $('#categoryFilter').append(`<option value="${cat}">${cat}</option>`);
+            });
+        }
 
-        $('#productGrid').empty();
-        paginatedProducts.forEach(p => {
-            $('#productGrid').append(`
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <img src="${p.thumbnail}" class="card-img-top" alt="${p.title}">
-                        <div class="card-body">
-                            <h5 class="card-title">${p.title}</h5>
-                            <p class="card-text">$${p.price}</p>
-                            <p class="card-text"><small class="text-muted">${p.category}</small></p>
-                            <button class="btn btn-primary btn-sm view-details" data-id="${p.id}">View Details</button>
+        function renderProducts() {
+            let filteredProducts = filterAndSearchProducts();
+            let paginatedProducts = paginate(filteredProducts, currentPage, itemsPerPage);
+
+            $('#productGrid').empty();
+            paginatedProducts.forEach(p => {
+                $('#productGrid').append(`
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="${p.thumbnail}" class="card-img-top" alt="${p.title}">
+                            <div class="card-body">
+                                <h5 class="card-title">${p.title}</h5>
+                                <p class="card-text">$${p.price}</p>
+                                <p class="card-text"><small class="text-muted">${p.category}</small></p>
+                                <button class="btn btn-primary btn-sm view-details" data-id="${p.id}">View Details</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `);
-        });
-    }
-
-    function filterAndSearchProducts() {
-        const search = $('#searchInput').val().toLowerCase();
-        const category = $('#categoryFilter').val();
-        return allProducts.filter(p => {
-            return (!category || p.category === category) &&
-                   (!search || p.title.toLowerCase().includes(search));
-        });
-    }
-
-    function paginate(items, page, perPage) {
-        const start = (page - 1) * perPage;
-        return items.slice(start, start + perPage);
-    }
-
-    function setupPagination() {
-        let totalPages = Math.ceil(filterAndSearchProducts().length / itemsPerPage);
-        $('#pagination').empty();
-        for(let i=1; i<=totalPages; i++){
-            $('#pagination').append(`
-                <li class="page-item ${i===currentPage?'active':''}">
-                    <a class="page-link" href="#">${i}</a>
-                </li>
-            `);
+                `);
+            });
         }
-    }
 
-    // Event handlers
-    $('#searchInput').on('input', function() {
-        currentPage = 1;
-        renderProducts();
-        setupPagination();
-    });
+        function filterAndSearchProducts() {
+            const search = $('#searchInput').val().toLowerCase();
+            const category = $('#categoryFilter').val();
+            return allProducts.filter(p => {
+                return (!category || p.category === category) &&
+                    (!search || p.title.toLowerCase().includes(search));
+            });
+        }
 
-    $('#categoryFilter').on('change', function() {
-        currentPage = 1;
-        renderProducts();
-        setupPagination();
-    });
+        function paginate(items, page, perPage) {
+            const start = (page - 1) * perPage;
+            return items.slice(start, start + perPage);
+        }
 
-    $('#pagination').on('click', '.page-link', function(e) {
-        e.preventDefault();
-        currentPage = parseInt($(this).text());
-        renderProducts();
-        setupPagination();
+        function setupPagination() {
+            let totalPages = Math.ceil(filterAndSearchProducts().length / itemsPerPage);
+            $('#pagination').empty();
+            for(let i=1; i<=totalPages; i++){
+                $('#pagination').append(`
+                    <li class="page-item ${i===currentPage?'active':''}">
+                        <a class="page-link" href="#">${i}</a>
+                    </li>
+                `);
+            }
+        }
+
+
+        // Function to render rating stars
+        function renderStars(rating) {
+            let fullStars = Math.floor(rating);
+            let halfStar = rating - fullStars >= 0.5 ? 1 : 0;
+            let emptyStars = 5 - fullStars - halfStar;
+            return '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(emptyStars);
+        }
+
+        // Open modal on button click
+        $(document).on('click', '.view-details', function() {
+            const id = $(this).data('id');
+            const product = allProducts.find(p => p.id === id);
+            if(product){
+                $('#productModalLabel').text(product.title);
+                $('#modalProductImage').attr('src', product.thumbnail);
+                $('#modalProductDescription').text(product.description);
+                $('#modalProductCategory').text(product.category);
+                $('#modalProductPrice').text(product.price);
+                $('#modalProductRating').text(renderStars(product.rating));
+                $('#addToCartBtn').data('id', product.id);
+                $('#productModal').modal('show');
+            }
+        });
+
+        // Event handlers
+        $('#searchInput').on('input', function() {
+            currentPage = 1;
+            renderProducts();
+            setupPagination();
+        });
+
+        $('#categoryFilter').on('change', function() {
+            currentPage = 1;
+            renderProducts();
+            setupPagination();
+        });
+
+        $('#pagination').on('click', '.page-link', function(e) {
+            e.preventDefault();
+            currentPage = parseInt($(this).text());
+            renderProducts();
+            setupPagination();
+        });
+
+        // Add to cart button
+        $('#addToCartBtn').on('click', function() {
+            const id = $(this).data('id');
+            const product = allProducts.find(p => p.id === id);
+            if(product){
+                const existing = cart.find(p => p.id === id);
+                if(existing){
+                    existing.quantity += 1;
+                } else {
+                    cart.push({ ...product, quantity: 1 });
+                }
+                $('#cart-count').text(cart.reduce((acc,p) => acc + p.quantity,0));
+                $('#productModal').modal('hide');
+                alert(`${product.title} added to cart!`);
+            }
+        });
     });
-});
 </script>
 }
