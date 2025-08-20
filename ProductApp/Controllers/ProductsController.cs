@@ -18,5 +18,10 @@ namespace ProductApp.Controllers
             return View();
         }
 
+        // GET: /Products/Cart
+        public IActionResult Cart()
+        {
+            return View();
+        }
     }
 }
