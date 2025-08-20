@@ -1,0 +1,87 @@
+@{
+    ViewData["Title"] = "Product Details";
+    // Product ID passed from controller via ViewBag.ProductId
+    var productId = ViewBag.ProductId ?? 0;
+}
+
+<div class="container my-5">
+    <div id="productDetails" class="row">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border" role="status" id="loadingSpinner">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <a href="/Products" class="btn btn-secondary mt-4">Back to Products</a>
+</div>
+
+@section Scripts {
+<script>
+$(document).ready(function() {
+    const id = @productId;
+    const apiUrl = `https://dummyjson.com/products/${id}`;
+
+    function showError() {
+        $('#productDetails').html('<div class="col-12"><p class="text-danger text-center">Unable to load product details.</p></div>');
+    }
+
+    $.getJSON(apiUrl, function(p) {
+        if (!p) {
+            showError();
+            return;
+        }
+
+        const html = `
+            <div class="col-md-5">
+                <img src="${p.thumbnail}" class="img-fluid rounded" alt="${p.title}" style="object-fit:cover; width:100%; height:360px;">
+            </div>
+            <div class="col-md-7">
+                <h2>${p.title}</h2>
+                <p class="text-muted">Category: ${p.category}</p>
+                <h4 class="text-success">$${p.price}</h4>
+                <p>${p.description}</p>
+                <p>Rating: ${renderStars(p.rating)} (${p.rating})</p>
+                <div class="mt-3">
+                    <button id="detailsAddToCart" class="btn btn-success">Add to Cart</button>
+                </div>
+            </div>
+        `;
+        $('#productDetails').html(html);
+
+        $('#detailsAddToCart').on('click', function() {
+            // Add to cart in a simple way: store to localStorage (persist across pages)
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const existing = cart.find(c => c.id === p.id);
+            if (existing) existing.quantity += 1;
+            else cart.push({ id: p.id, title: p.title, price: p.price, thumbnail: p.thumbnail, quantity: 1 });
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateNavbarCartCount();
+            alert(`${p.title} added to cart`);
+        });
+
+    }).fail(function() {
+        showError();
+    });
+
+    // helper functions
+    function renderStars(rating) {
+        const full = Math.floor(rating);
+        const half = rating - full >= 0.5 ? 1 : 0;
+        const empty = 5 - full - half;
+        return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
+    }
+
+    // Update nav cart count from localStorage (if your navbar reads cart-count)
+    function updateNavbarCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const count = cart.reduce((acc, c) => acc + c.quantity, 0);
+        // try to update #cart-count badge if present
+        if ($('#cart-count').length) $('#cart-count').text(count);
+    }
+
+    // Call once on page load to show persisted cart items
+    updateNavbarCartCount();
+});
+</script>
+}

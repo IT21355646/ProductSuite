@@ -6,15 +6,15 @@
     <h2 class="mb-4">Products</h2>
 
     <!-- Search -->
-    <div class="mb-3">
-        <input type="text" id="searchInput" class="form-control" placeholder="Search products by title...">
-    </div>
-
-    <!-- Filter by category -->
-    <div class="mb-3">
-        <select id="categoryFilter" class="form-select">
-            <option value="">All Categories</option>
-        </select>
+    <div class="row mb-3">
+        <div class="col-md-8 mb-2">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search products by title...">
+        </div>
+        <div class="col-md-4 mb-2">
+            <select id="categoryFilter" class="form-select">
+                <option value="">All Categories</option>
+            </select>
+        </div>
     </div>
 
     <!-- Product Grid -->
@@ -46,7 +46,10 @@
             <p>Category: <span id="modalProductCategory"></span></p>
             <p>Price: $<span id="modalProductPrice"></span></p>
             <p>Rating: <span id="modalProductRating"></span></p>
-            <button id="addToCartBtn" class="btn btn-success">Add to Cart</button>
+            <div class="mt-3">
+                <button id="addToCartBtn" class="btn btn-success">Add to Cart</button>
+                <a id="detailsPageLink" href="#" class="btn btn-outline-primary ms-2">Open Details Page</a>
+            </div>
           </div>
         </div>
       </div>
@@ -56,139 +59,216 @@
 
 @section Scripts {
 <script>
-    $(document).ready(function() {
-        const apiURL = "https://dummyjson.com/products";
-        let allProducts = [];
-        let currentPage = 1;
-        const itemsPerPage = 10;
+$(document).ready(function() {
+    const apiURL = "https://dummyjson.com/products";
+    let allProducts = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
-        // Cart object
-        let cart = [];
+    // In-memory cart
+    let cart = [];
 
-        // Fetch products
-        $.getJSON(apiURL, function(data) {
-            allProducts = data.products;
-            populateCategories();
-            renderProducts();
-            setupPagination();
+    // Fetch products (all)
+    $.getJSON(apiURL, function(data) {
+        if (!data || !data.products) {
+            console.error('API returned no products.');
+            return;
+        }
+        allProducts = data.products;
+        populateCategories();
+        renderProducts();
+        setupPagination();
+    }).fail(function(jqxhr, textStatus, error) {
+        console.error("Failed to load products:", textStatus, error);
+    });
+
+    function populateCategories() {
+        let categories = [...new Set(allProducts.map(p => p.category))];
+        categories.forEach(cat => {
+            $('#categoryFilter').append(`<option value="${cat}">${cat}</option>`);
         });
+    }
 
-        function populateCategories() {
-            let categories = [...new Set(allProducts.map(p => p.category))];
-            categories.forEach(cat => {
-                $('#categoryFilter').append(`<option value="${cat}">${cat}</option>`);
-            });
+    function renderProducts() {
+        let filteredProducts = filterAndSearchProducts();
+        let paginatedProducts = paginate(filteredProducts, currentPage, itemsPerPage);
+
+        $('#productGrid').empty();
+        if (paginatedProducts.length === 0) {
+            $('#productGrid').append(`<div class="col-12"><p class="text-center">No products found.</p></div>`);
+            return;
         }
 
-        function renderProducts() {
-            let filteredProducts = filterAndSearchProducts();
-            let paginatedProducts = paginate(filteredProducts, currentPage, itemsPerPage);
-
-            $('#productGrid').empty();
-            paginatedProducts.forEach(p => {
-                $('#productGrid').append(`
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100">
-                            <img src="${p.thumbnail}" class="card-img-top" alt="${p.title}">
-                            <div class="card-body">
-                                <h5 class="card-title">${p.title}</h5>
-                                <p class="card-text">$${p.price}</p>
-                                <p class="card-text"><small class="text-muted">${p.category}</small></p>
+        paginatedProducts.forEach(p => {
+            $('#productGrid').append(`
+                <div class="col-sm-6 col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="${p.thumbnail}" class="card-img-top" alt="${escapeHtml(p.title)}" style="height:200px;object-fit:cover;">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-1">
+                                <a href="/Products/Details/${p.id}" class="text-decoration-none stretched-link">${highlightText(p.title)}</a>
+                            </h5>
+                            <p class="card-text mb-1 fw-semibold">$${p.price}</p>
+                            <p class="card-text"><small class="text-muted">${p.category}</small></p>
+                            <div class="mt-auto">
                                 <button class="btn btn-primary btn-sm view-details" data-id="${p.id}">View Details</button>
+                                <button class="btn btn-outline-success btn-sm ms-2 add-to-cart" data-id="${p.id}">Add to Cart</button>
                             </div>
                         </div>
                     </div>
-                `);
-            });
+                </div>
+            `);
+        });
+    }
+
+    // Basic HTML escape
+    function escapeHtml(text) {
+        return $('<div/>').text(text).html();
+    }
+
+    // Highlight matching search text in title
+    function highlightText(text) {
+        const search = $('#searchInput').val().trim();
+        if (!search) return escapeHtml(text);
+        const regex = new RegExp('(' + escapeRegExp(search) + ')', 'ig');
+        return escapeHtml(text).replace(regex, '<mark>$1</mark>');
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function filterAndSearchProducts() {
+        const search = $('#searchInput').val().toLowerCase();
+        const category = $('#categoryFilter').val();
+        return allProducts.filter(p => {
+            const titleMatch = !search || p.title.toLowerCase().includes(search);
+            const categoryMatch = !category || p.category === category;
+            return titleMatch && categoryMatch;
+        });
+    }
+
+    function paginate(items, page, perPage) {
+        const start = (page - 1) * perPage;
+        return items.slice(start, start + perPage);
+    }
+
+    function setupPagination() {
+        let totalPages = Math.ceil(filterAndSearchProducts().length / itemsPerPage) || 1;
+        $('#pagination').empty();
+
+        // Previous
+        $('#pagination').append(`<li class="page-item ${currentPage===1?'disabled':''}"><a class="page-link" href="#" data-page="${currentPage-1}">Prev</a></li>`);
+
+        for(let i=1; i<=totalPages; i++){
+            $('#pagination').append(`
+                <li class="page-item ${i===currentPage?'active':''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `);
         }
 
-        function filterAndSearchProducts() {
-            const search = $('#searchInput').val().toLowerCase();
-            const category = $('#categoryFilter').val();
-            return allProducts.filter(p => {
-                return (!category || p.category === category) &&
-                    (!search || p.title.toLowerCase().includes(search));
-            });
-        }
+        // Next
+        $('#pagination').append(`<li class="page-item ${currentPage===totalPages?'disabled':''}"><a class="page-link" href="#" data-page="${currentPage+1}">Next</a></li>`);
+    }
 
-        function paginate(items, page, perPage) {
-            const start = (page - 1) * perPage;
-            return items.slice(start, start + perPage);
-        }
-
-        function setupPagination() {
-            let totalPages = Math.ceil(filterAndSearchProducts().length / itemsPerPage);
-            $('#pagination').empty();
-            for(let i=1; i<=totalPages; i++){
-                $('#pagination').append(`
-                    <li class="page-item ${i===currentPage?'active':''}">
-                        <a class="page-link" href="#">${i}</a>
-                    </li>
-                `);
-            }
-        }
-
-
-        // Function to render rating stars
-        function renderStars(rating) {
-            let fullStars = Math.floor(rating);
-            let halfStar = rating - fullStars >= 0.5 ? 1 : 0;
-            let emptyStars = 5 - fullStars - halfStar;
-            return '★'.repeat(fullStars) + (halfStar ? '½' : '') + '☆'.repeat(emptyStars);
-        }
-
-        // Open modal on button click
-        $(document).on('click', '.view-details', function() {
-            const id = $(this).data('id');
-            const product = allProducts.find(p => p.id === id);
-            if(product){
-                $('#productModalLabel').text(product.title);
-                $('#modalProductImage').attr('src', product.thumbnail);
-                $('#modalProductDescription').text(product.description);
-                $('#modalProductCategory').text(product.category);
-                $('#modalProductPrice').text(product.price);
-                $('#modalProductRating').text(renderStars(product.rating));
-                $('#addToCartBtn').data('id', product.id);
-                $('#productModal').modal('show');
-            }
-        });
-
-        // Event handlers
-        $('#searchInput').on('input', function() {
-            currentPage = 1;
-            renderProducts();
-            setupPagination();
-        });
-
-        $('#categoryFilter').on('change', function() {
-            currentPage = 1;
-            renderProducts();
-            setupPagination();
-        });
-
-        $('#pagination').on('click', '.page-link', function(e) {
-            e.preventDefault();
-            currentPage = parseInt($(this).text());
-            renderProducts();
-            setupPagination();
-        });
-
-        // Add to cart button
-        $('#addToCartBtn').on('click', function() {
-            const id = $(this).data('id');
-            const product = allProducts.find(p => p.id === id);
-            if(product){
-                const existing = cart.find(p => p.id === id);
-                if(existing){
-                    existing.quantity += 1;
-                } else {
-                    cart.push({ ...product, quantity: 1 });
-                }
-                $('#cart-count').text(cart.reduce((acc,p) => acc + p.quantity,0));
-                $('#productModal').modal('hide');
-                alert(`${product.title} added to cart!`);
-            }
-        });
+    // Event handlers
+    $('#searchInput').on('input', function() {
+        currentPage = 1;
+        renderProducts();
+        setupPagination();
     });
+
+    $('#categoryFilter').on('change', function() {
+        currentPage = 1;
+        renderProducts();
+        setupPagination();
+    });
+
+    $('#pagination').on('click', '.page-link', function(e) {
+        e.preventDefault();
+        const page = parseInt($(this).data('page'));
+        if (!page || page < 1) return;
+        currentPage = page;
+        renderProducts();
+        setupPagination();
+        // scroll to top of product grid for convenience
+        $('html, body').animate({ scrollTop: $('#productGrid').offset().top - 80 }, 200);
+    });
+
+    // View details (open modal)
+    $(document).on('click', '.view-details', function() {
+        const id = parseInt($(this).data('id'));
+        openProductModal(id);
+    });
+
+    // Add to cart button from cards
+    $(document).on('click', '.add-to-cart', function() {
+        const id = parseInt($(this).data('id'));
+        addToCartById(id);
+    });
+
+    // Modal Add to cart
+    $('#addToCartBtn').on('click', function() {
+        const id = parseInt($(this).data('id'));
+        addToCartById(id);
+        $('#productModal').modal('hide');
+    });
+
+    // Open product modal: fetch product details from API and populate modal
+    function openProductModal(id) {
+        $.getJSON(`${apiURL}/${id}`, function(p) {
+            if (!p) return;
+            $('#productModalLabel').text(p.title);
+            $('#modalProductImage').attr('src', p.thumbnail);
+            $('#modalProductDescription').text(p.description);
+            $('#modalProductCategory').text(p.category);
+            $('#modalProductPrice').text(p.price);
+            $('#modalProductRating').text(renderStars(p.rating));
+            $('#addToCartBtn').data('id', p.id);
+            $('#detailsPageLink').attr('href', `/Products/Details/${p.id}`);
+            $('#productModal').modal('show');
+        }).fail(function(){ alert('Failed to load product details.'); });
+    }
+
+    function addToCartById(id) {
+        const product = allProducts.find(p => p.id === id);
+        if (!product) {
+            // fallback: try fetch single product from API
+            $.getJSON(`${apiURL}/${id}`, function(p) {
+                if (!p) return;
+                addToCartObject(p);
+            });
+            return;
+        }
+        addToCartObject(product);
+    }
+
+    function addToCartObject(product) {
+        const existing = cart.find(c => c.id === product.id);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ id: product.id, title: product.title, price: product.price, thumbnail: product.thumbnail, quantity: 1 });
+        }
+        updateCartBadge();
+    }
+
+    function updateCartBadge() {
+        const count = cart.reduce((acc, c) => acc + c.quantity, 0);
+        $('#cart-count').text(count);
+    }
+
+    // Helper: render rating stars (simple)
+    function renderStars(rating) {
+        const full = Math.floor(rating);
+        const half = rating - full >= 0.5 ? 1 : 0;
+        const empty = 5 - full - half;
+        return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
+    }
+
+    // initial cart badge
+    updateCartBadge();
+});
 </script>
 }
